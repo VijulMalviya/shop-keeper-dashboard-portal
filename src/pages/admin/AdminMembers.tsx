@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService, Member, Store } from '@/services/mockData';
-import { search, edit, x } from 'lucide-react';
+import { Search, Edit, X } from 'lucide-react';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -113,19 +112,25 @@ export default function AdminMembers() {
   };
 
   return (
-    <div className="px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="px-4 py-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Members</h1>
-          <p className="text-gray-600 mt-2">Manage store members</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Team Members
+          </h1>
+          <p className="text-gray-600 mt-2 text-lg">Manage your store team with ease</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>Add Member</Button>
+            <Button onClick={() => resetForm()} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg">
+              Add New Member
+            </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingMember ? 'Edit Member' : 'Add New Member'}</DialogTitle>
+              <DialogTitle className="text-xl font-semibold">
+                {editingMember ? 'Edit Member' : 'Add New Member'}
+              </DialogTitle>
               <DialogDescription>
                 {editingMember ? 'Update member information' : 'Enter member details below'}
               </DialogDescription>
@@ -138,6 +143,7 @@ export default function AdminMembers() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  className="focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -148,12 +154,13 @@ export default function AdminMembers() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  className="focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <Label htmlFor="store">Store</Label>
                 <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="focus:ring-2 focus:ring-blue-500">
                     <SelectValue placeholder="Select a store" />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,8 +172,8 @@ export default function AdminMembers() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                   {editingMember ? 'Update' : 'Add'} Member
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -178,20 +185,20 @@ export default function AdminMembers() {
         </Dialog>
       </div>
 
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-4 mb-8">
         <div className="flex-1">
           <div className="relative">
-            <search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
-              placeholder="Search members..."
+              placeholder="Search members by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white/80 backdrop-blur-sm border-gray-200 focus:ring-2 focus:ring-blue-500 shadow-sm"
             />
           </div>
         </div>
         <Select value={filterStore} onValueChange={setFilterStore}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 bg-white/80 backdrop-blur-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -207,36 +214,54 @@ export default function AdminMembers() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMembers.map((member) => (
-          <Card key={member.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
+          <Card key={member.id} className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-md hover:scale-105">
+            <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{member.name}</CardTitle>
-                  <CardDescription>{member.email}</CardDescription>
+                <div className="flex-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg mb-3">
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                  <CardTitle className="text-lg font-semibold text-gray-800">{member.name}</CardTitle>
+                  <CardDescription className="text-sm text-gray-600">{member.email}</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => openEditDialog(member)}
+                    className="h-8 w-8 p-0 hover:bg-blue-100"
                   >
-                    <edit className="w-4 h-4" />
+                    <Edit className="w-4 h-4 text-blue-600" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(member.id)}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
                   >
-                    <x className="w-4 h-4" />
+                    <X className="w-4 h-4 text-red-600" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p><span className="font-medium">Store:</span> {member.storeName}</p>
-                <p><span className="font-medium">Password:</span> {member.password}</p>
-                <p><span className="font-medium">Joined:</span> {member.createdAt}</p>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Store:</span>
+                  <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {member.storeName}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Password:</span>
+                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                    {member.password}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Joined:</span>
+                  <span className="text-sm text-gray-600">{member.createdAt}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -244,8 +269,12 @@ export default function AdminMembers() {
       </div>
 
       {filteredMembers.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No members found</p>
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="w-12 h-12 text-gray-400" />
+          </div>
+          <p className="text-xl text-gray-500 mb-2">No members found</p>
+          <p className="text-gray-400">Try adjusting your search or filter criteria</p>
         </div>
       )}
     </div>

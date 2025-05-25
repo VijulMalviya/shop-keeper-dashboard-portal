@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService, Order } from '@/services/mockData';
-import { check, x } from 'lucide-react';
+import { Check, X, Clock, DollarSign, Package, AlertCircle } from 'lucide-react';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -16,106 +16,160 @@ export default function AdminOrders() {
   }, []);
 
   const loadOrders = async () => {
-    const ordersData = await MockDataService.getOrders();
-    setOrders(ordersData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    const data = await MockDataService.getOrders();
+    setOrders(data);
   };
 
-  const handleStatusUpdate = async (orderId: string, status: 'approved' | 'rejected') => {
+  const handleApproveOrder = async (orderId: string) => {
     try {
-      await MockDataService.updateOrderStatus(orderId, status);
-      toast({
-        title: `Order ${status}`,
-        description: `Order has been ${status} successfully`
-      });
+      await MockDataService.updateOrderStatus(orderId, 'approved');
+      toast({ title: 'Order approved successfully' });
       loadOrders();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: `Failed to ${status} order`,
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: 'Failed to approve order', variant: 'destructive' });
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleRejectOrder = async (orderId: string) => {
+    try {
+      await MockDataService.updateOrderStatus(orderId, 'rejected');
+      toast({ title: 'Order rejected' });
+      loadOrders();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to reject order', variant: 'destructive' });
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const pendingOrders = orders.filter(order => order.status === 'pending');
+  const approvedOrders = orders.filter(order => order.status === 'approved');
+  const rejectedOrders = orders.filter(order => order.status === 'rejected');
 
   return (
-    <div className="px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-600 mt-2">Review and manage all orders</p>
+    <div className="px-4 py-6 bg-gradient-to-br from-orange-50 to-red-100 min-h-screen">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+          Order Management
+        </h1>
+        <p className="text-gray-600 mt-2 text-lg">Review and manage customer orders</p>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{pendingOrders.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Approved Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{approvedOrders.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Rejected Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{rejectedOrders.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-6">
         {orders.map((order) => (
-          <Card key={order.id} className="hover:shadow-md transition-shadow">
+          <Card key={order.id} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                  <CardDescription>
-                    {formatDate(order.createdAt)} • {order.memberName} • {order.storeName}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status.toUpperCase()}
-                  </Badge>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">${order.total.toFixed(2)}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {order.memberName.charAt(0).toUpperCase()}
                   </div>
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {order.memberName}
+                      <Badge variant={
+                        order.status === 'pending' ? 'secondary' :
+                        order.status === 'approved' ? 'default' : 'destructive'
+                      } className={
+                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }>
+                        {order.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                        {order.status === 'approved' && <Check className="w-3 h-3 mr-1" />}
+                        {order.status === 'rejected' && <X className="w-3 h-3 mr-1" />}
+                        {order.status}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-4">
+                      <span>From: {order.storeName}</span>
+                      <span>•</span>
+                      <span>Order #{order.id.slice(-6)}</span>
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-1 text-xl font-bold text-gray-900">
+                    <DollarSign className="w-5 h-5" />
+                    {order.total.toFixed(2)}
+                  </div>
+                  <p className="text-sm text-gray-500">{order.items.length} items</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Order Items:</h4>
-                  <div className="space-y-2">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
-                        <span>{item.productName} x {item.quantity}</span>
-                        <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {order.items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Package className="w-4 h-4 text-gray-600" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.productName}</p>
+                        <p className="text-xs text-gray-600">Qty: {item.quantity} × ${item.price}</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-
+                
                 {order.status === 'pending' && (
-                  <div className="flex gap-2 pt-4 border-t">
+                  <div className="flex gap-3 pt-4 border-t">
                     <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => handleStatusUpdate(order.id, 'approved')}
-                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => handleApproveOrder(order.id)}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                     >
-                      <check className="w-4 h-4 mr-2" />
-                      Approve
+                      <Check className="w-4 h-4 mr-2" />
+                      Approve Order
                     </Button>
                     <Button
                       variant="destructive"
-                      size="sm"
-                      onClick={() => handleStatusUpdate(order.id, 'rejected')}
+                      onClick={() => handleRejectOrder(order.id)}
+                      className="flex-1"
                     >
-                      <x className="w-4 h-4 mr-2" />
-                      Reject
+                      <X className="w-4 h-4 mr-2" />
+                      Reject Order
                     </Button>
                   </div>
                 )}
@@ -126,8 +180,12 @@ export default function AdminOrders() {
       </div>
 
       {orders.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No orders found</p>
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Package className="w-12 h-12 text-gray-400" />
+          </div>
+          <p className="text-xl text-gray-500 mb-2">No orders found</p>
+          <p className="text-gray-400">Orders will appear here when customers place them</p>
         </div>
       )}
     </div>
