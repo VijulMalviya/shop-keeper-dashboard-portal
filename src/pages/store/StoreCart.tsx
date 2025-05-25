@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService } from '@/services/mockData';
-import { arrow-left, x } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 
 export default function StoreCart() {
   const navigate = useNavigate();
@@ -60,7 +59,7 @@ export default function StoreCart() {
           onClick={() => navigate('/store')}
           className="mb-6"
         >
-          <arrow-left className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Products
         </Button>
 
@@ -82,7 +81,7 @@ export default function StoreCart() {
         onClick={() => navigate('/store')}
         className="mb-6"
       >
-        <arrow-left className="w-4 h-4 mr-2" />
+        <ArrowLeft className="w-4 h-4 mr-2" />
         Continue Shopping
       </Button>
 
@@ -117,7 +116,7 @@ export default function StoreCart() {
                       size="sm"
                       onClick={() => removeItem(item.product.id)}
                     >
-                      <x className="w-4 h-4" />
+                      <X className="w-4 h-4" />
                     </Button>
                   </div>
                   <div className="text-right">

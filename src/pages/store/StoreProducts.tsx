@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService, Product } from '@/services/mockData';
 import { useCart } from '@/contexts/CartContext';
-import { shopping-cart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 
 export default function StoreProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -42,7 +41,7 @@ export default function StoreProducts() {
         </div>
         <Link to="/store/cart">
           <Button variant="outline" className="relative">
-            <shopping-cart className="w-4 h-4 mr-2" />
+            <ShoppingCart className="w-4 h-4 mr-2" />
             Cart
             {getTotalItems() > 0 && (
               <Badge className="ml-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs">

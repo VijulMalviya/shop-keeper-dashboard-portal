@@ -1,19 +1,18 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { home, user, list, log-out, settings } from 'lucide-react';
+import { Home, User, List, LogOut, Settings } from 'lucide-react';
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: home },
-    { name: 'Stores', href: '/admin/stores', icon: settings },
-    { name: 'Members', href: '/admin/members', icon: user },
-    { name: 'Orders', href: '/admin/orders', icon: list }
+    { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Stores', href: '/admin/stores', icon: Settings },
+    { name: 'Members', href: '/admin/members', icon: User },
+    { name: 'Orders', href: '/admin/orders', icon: List }
   ];
 
   const isActive = (href: string) => {
@@ -52,7 +51,7 @@ export function AdminLayout() {
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">Welcome, {user?.name}</span>
               <Button variant="outline" size="sm" onClick={logout}>
-                <log-out className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
             </div>

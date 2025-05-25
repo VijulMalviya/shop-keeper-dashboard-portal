@@ -1,19 +1,18 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { home, shopping-cart, list, user, log-out } from 'lucide-react';
+import { Home, ShoppingCart, List, User, LogOut } from 'lucide-react';
 
 export function StoreLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
   const navigation = [
-    { name: 'Products', href: '/store', icon: home },
-    { name: 'Cart', href: '/store/cart', icon: shopping-cart },
-    { name: 'Orders', href: '/store/orders', icon: list },
-    { name: 'Profile', href: '/store/profile', icon: user }
+    { name: 'Products', href: '/store', icon: Home },
+    { name: 'Cart', href: '/store/cart', icon: ShoppingCart },
+    { name: 'Orders', href: '/store/orders', icon: List },
+    { name: 'Profile', href: '/store/profile', icon: User }
   ];
 
   const isActive = (href: string) => {
@@ -53,7 +52,7 @@ export function StoreLayout() {
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">Welcome, {user?.name}</span>
               <Button variant="outline" size="sm" onClick={logout}>
-                <log-out className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
             </div>

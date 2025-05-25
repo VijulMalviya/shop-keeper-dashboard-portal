@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService, Product } from '@/services/mockData';
 import { useCart } from '@/contexts/CartContext';
-import { arrow-left, shopping-cart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart } from 'lucide-react';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +59,7 @@ export default function ProductDetail() {
         onClick={() => navigate('/store')}
         className="mb-6"
       >
-        <arrow-left className="w-4 h-4 mr-2" />
+        <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Products
       </Button>
 
@@ -116,7 +115,7 @@ export default function ProductDetail() {
                 disabled={product.stock === 0}
                 className="w-full"
               >
-                <shopping-cart className="w-4 h-4 mr-2" />
+                <ShoppingCart className="w-4 h-4 mr-2" />
                 Add to Cart - ${(product.price * quantity).toFixed(2)}
               </Button>
             </CardContent>
