@@ -17,7 +17,8 @@ export default function AdminStores() {
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    storeId: ''
+    storeId: '',
+    memberCount: 0
   });
   const { toast } = useToast();
 
@@ -68,7 +69,7 @@ export default function AdminStores() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', storeId: '' });
+    setFormData({ name: '', storeId: '', memberCount: 0 });
     setEditingStore(null);
     setIsAddDialogOpen(false);
   };
@@ -77,23 +78,22 @@ export default function AdminStores() {
     setEditingStore(store);
     setFormData({
       name: store.name,
-      storeId: store.storeId
+      storeId: store.storeId,
+      memberCount: store.memberCount
     });
     setIsAddDialogOpen(true);
   };
 
   return (
-    <div className="px-4 py-6 bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
+    <div className="p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Store Locations
-          </h1>
-          <p className="text-gray-600 mt-2 text-lg">Manage your retail network</p>
+          <h1 className="text-3xl font-bold text-gray-900">Store Locations</h1>
+          <p className="text-gray-600 mt-2">Manage your retail network</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg">
+            <Button onClick={() => resetForm()} className="bg-black text-white hover:bg-gray-800">
               Add New Store
             </Button>
           </DialogTrigger>
@@ -123,6 +123,16 @@ export default function AdminStores() {
                   required
                 />
               </div>
+              <div>
+                <Label htmlFor="memberCount">Member Count</Label>
+                <Input
+                  id="memberCount"
+                  type="number"
+                  value={formData.memberCount}
+                  onChange={(e) => setFormData({ ...formData, memberCount: parseInt(e.target.value) || 0 })}
+                  required
+                />
+              </div>
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">
                   {editingStore ? 'Update' : 'Add'} Store
@@ -143,23 +153,18 @@ export default function AdminStores() {
             placeholder="Search stores..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white/80 backdrop-blur-sm"
+            className="pl-10"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStores.map((store, index) => (
-          <Card key={store.id} className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-md hover:scale-105">
+          <Card key={store.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white ${
-                    index % 4 === 0 ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
-                    index % 4 === 1 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                    index % 4 === 2 ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
-                    'bg-gradient-to-r from-orange-500 to-orange-600'
-                  }`}>
+                  <div className="w-12 h-12 rounded-lg bg-black flex items-center justify-center text-white">
                     <StoreIcon className="w-6 h-6" />
                   </div>
                   <div>
@@ -175,17 +180,17 @@ export default function AdminStores() {
                     variant="ghost"
                     size="sm"
                     onClick={() => openEditDialog(store)}
-                    className="h-8 w-8 p-0 hover:bg-blue-100"
+                    className="h-8 w-8 p-0"
                   >
-                    <Edit className="w-4 h-4 text-blue-600" />
+                    <Edit className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(store.id)}
-                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    className="h-8 w-8 p-0 text-red-600"
                   >
-                    <X className="w-4 h-4 text-red-600" />
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
