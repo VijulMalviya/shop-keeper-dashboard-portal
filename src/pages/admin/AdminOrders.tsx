@@ -3,21 +3,50 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { MockDataService, Order } from '@/services/mockData';
-import { Check, X, Clock, DollarSign, Package, AlertCircle } from 'lucide-react';
+import { Check, X, Search, Filter } from 'lucide-react';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
 
   useEffect(() => {
     loadOrders();
   }, []);
 
+  useEffect(() => {
+    filterOrders();
+  }, [orders, searchTerm, statusFilter]);
+
   const loadOrders = async () => {
     const data = await MockDataService.getOrders();
     setOrders(data);
+  };
+
+  const filterOrders = () => {
+    let filtered = orders;
+
+    // Filter by search term (order number or member name)
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.memberName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(order => order.status === statusFilter);
+    }
+
+    setFilteredOrders(filtered);
   };
 
   const handleApproveOrder = async (orderId: string) => {
@@ -40,154 +69,161 @@ export default function AdminOrders() {
     }
   };
 
-  const pendingOrders = orders.filter(order => order.status === 'pending');
-  const approvedOrders = orders.filter(order => order.status === 'approved');
-  const rejectedOrders = orders.filter(order => order.status === 'rejected');
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   return (
-    <div className="px-4 py-6 bg-gradient-to-br from-orange-50 to-red-100 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-          Order Management
-        </h1>
-        <p className="text-gray-600 mt-2 text-lg">Review and manage customer orders</p>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
+        <p className="text-gray-600 mt-1">Review and manage customer orders</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingOrders.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                <Check className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Approved Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{approvedOrders.length}</p>
+      {/* Search and Filter Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Search & Filter
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search by order number or member name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Rejected Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{rejectedOrders.length}</p>
-              </div>
+            <div className="w-full md:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Orders</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <Card key={order.id} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {order.memberName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
+      {/* Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Orders ({filteredOrders.length})</CardTitle>
+          <CardDescription>
+            {filteredOrders.length === orders.length 
+              ? 'Showing all orders' 
+              : `Showing ${filteredOrders.length} of ${orders.length} orders`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order #</TableHead>
+                <TableHead>Member</TableHead>
+                <TableHead>Store</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredOrders.map((order) => (
+                <TableRow key={order.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">
+                    #{order.id.slice(-6)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                        {order.memberName.charAt(0).toUpperCase()}
+                      </div>
                       {order.memberName}
-                      <Badge variant={
-                        order.status === 'pending' ? 'secondary' :
-                        order.status === 'approved' ? 'default' : 'destructive'
-                      } className={
-                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }>
-                        {order.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                        {order.status === 'approved' && <Check className="w-3 h-3 mr-1" />}
-                        {order.status === 'rejected' && <X className="w-3 h-3 mr-1" />}
-                        {order.status}
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-4">
-                      <span>From: {order.storeName}</span>
-                      <span>•</span>
-                      <span>Order #{order.id.slice(-6)}</span>
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1 text-xl font-bold text-gray-900">
-                    <DollarSign className="w-5 h-5" />
-                    {order.total.toFixed(2)}
-                  </div>
-                  <p className="text-sm text-gray-500">{order.items.length} items</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Package className="w-4 h-4 text-gray-600" />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{item.productName}</p>
-                        <p className="text-xs text-gray-600">Qty: {item.quantity} × ${item.price}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{order.storeName}</TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {order.items.length} items
+                      <div className="text-gray-500 text-xs">
+                        {order.items.slice(0, 2).map((item, index) => (
+                          <div key={index}>{item.productName}</div>
+                        ))}
+                        {order.items.length > 2 && (
+                          <div>+{order.items.length - 2} more</div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-                
-                {order.status === 'pending' && (
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button
-                      onClick={() => handleApproveOrder(order.id)}
-                      className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve Order
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleRejectOrder(order.id)}
-                      className="flex-1"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Reject Order
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    ${order.total.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(order.status)}
+                  </TableCell>
+                  <TableCell>
+                    {order.status === 'pending' ? (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveOrder(order.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleRejectOrder(order.id)}
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-sm">No actions</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-      {orders.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Package className="w-12 h-12 text-gray-400" />
-          </div>
-          <p className="text-xl text-gray-500 mb-2">No orders found</p>
-          <p className="text-gray-400">Orders will appear here when customers place them</p>
-        </div>
-      )}
+          {filteredOrders.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'No orders match your search criteria' 
+                  : 'No orders found'}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
