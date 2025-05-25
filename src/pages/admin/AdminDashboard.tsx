@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MockDataService, Store, Member, Order } from '@/services/mockData';
-import { TrendingUp, Users, Store as StoreIcon, Clock, DollarSign, ShoppingCart, AlertCircle, CheckCircle } from 'lucide-react';
+import { TrendingUp, Users, Store as StoreIcon, Clock, ShoppingCart, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -25,10 +25,18 @@ export default function AdminDashboard() {
 
   const pendingOrders = orders.filter(order => order.status === 'pending');
   const approvedOrders = orders.filter(order => order.status === 'approved');
-  const totalRevenue = approvedOrders.reduce((sum, order) => sum + order.total, 0);
-  const avgOrderValue = approvedOrders.length > 0 ? totalRevenue / approvedOrders.length : 0;
 
   const stats = [
+    {
+      title: 'Approved Orders',
+      value: approvedOrders.length,
+      description: 'Completed orders',
+      icon: CheckCircle,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      change: '+18%',
+      changeType: 'increase'
+    },
     {
       title: 'Total Stores',
       value: stores.length,
@@ -44,8 +52,8 @@ export default function AdminDashboard() {
       value: members.length,
       description: 'Registered users',
       icon: Users,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
+      color: 'from-gray-500 to-gray-600',
+      bgColor: 'bg-gray-50',
       change: '+18%',
       changeType: 'increase'
     },
@@ -58,16 +66,6 @@ export default function AdminDashboard() {
       bgColor: 'bg-yellow-50',
       change: '-5%',
       changeType: 'decrease'
-    },
-    {
-      title: 'Total Revenue',
-      value: `$${totalRevenue.toLocaleString()}`,
-      description: 'This month',
-      icon: DollarSign,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      change: '+24%',
-      changeType: 'increase'
     }
   ];
 
@@ -212,51 +210,6 @@ export default function AdminDashboard() {
                   }`} style={{ width: `${(store.memberCount / Math.max(...stores.map(s => s.memberCount))) * 100}%` }} />
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Average Order Value</p>
-                <p className="text-2xl font-bold text-gray-900">${avgOrderValue.toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Approved Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{approvedOrders.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Growth Rate</p>
-                <p className="text-2xl font-bold text-gray-900">+15.3%</p>
-              </div>
             </div>
           </CardContent>
         </Card>

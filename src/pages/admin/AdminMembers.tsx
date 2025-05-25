@@ -20,7 +20,8 @@ export default function AdminMembers() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    storeId: ''
+    storeId: '',
+    tempPassword: ''
   });
   const { toast } = useToast();
 
@@ -64,9 +65,11 @@ export default function AdminMembers() {
       }
 
       const memberData = {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        storeId: formData.storeId,
         storeName: selectedStore.name,
-        password: editingMember ? editingMember.password : generatePassword()
+        password: formData.tempPassword || (editingMember ? editingMember.password : generatePassword())
       };
 
       if (editingMember) {
@@ -96,7 +99,7 @@ export default function AdminMembers() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', storeId: '' });
+    setFormData({ name: '', email: '', storeId: '', tempPassword: '' });
     setEditingMember(null);
     setIsAddDialogOpen(false);
   };
@@ -106,7 +109,8 @@ export default function AdminMembers() {
     setFormData({
       name: member.name,
       email: member.email,
-      storeId: member.storeId
+      storeId: member.storeId,
+      tempPassword: member.password
     });
     setIsAddDialogOpen(true);
   };
@@ -171,6 +175,20 @@ export default function AdminMembers() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="tempPassword">Temporary Password</Label>
+                <Input
+                  id="tempPassword"
+                  type="text"
+                  value={formData.tempPassword}
+                  onChange={(e) => setFormData({ ...formData, tempPassword: e.target.value })}
+                  placeholder="Leave empty to auto-generate"
+                  className="focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {editingMember ? 'Leave empty to keep current password' : 'Leave empty to auto-generate a password'}
+                </p>
               </div>
               <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
