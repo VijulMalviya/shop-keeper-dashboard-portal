@@ -9,9 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOrders } from '@/hooks/useOrders';
 import { OrdersTableSkeleton } from '@/components/OrdersTableSkeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Loading, LoadingSpinner } from '@/components/ui/loading';
 import { Check, X, Search, Filter, RefreshCw, AlertCircle } from 'lucide-react';
 
-export default function AdminOrders() {
+function AdminOrdersContent() {
   const {
     filteredOrders,
     isLoading,
@@ -24,6 +26,14 @@ export default function AdminOrders() {
     rejectOrder,
     refreshOrders
   } = useOrders();
+
+  console.log('AdminOrders render:', { 
+    ordersCount: filteredOrders.length, 
+    isLoading, 
+    error,
+    searchTerm,
+    statusFilter 
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -39,14 +49,34 @@ export default function AdminOrders() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Invalid date';
+    }
   };
 
-  if (isLoading) {
+  const handleApprove = async (orderId: string) => {
+    try {
+      await approveOrder(orderId);
+    } catch (error) {
+      console.error('Error approving order:', error);
+    }
+  };
+
+  const handleReject = async (orderId: string) => {
+    try {
+      await rejectOrder(orderId);
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+    }
+  };
+
+  if (isLoading && filteredOrders.length === 0) {
     return (
       <div className="p-4 md:p-6">
         <div className="mb-6">
@@ -72,7 +102,11 @@ export default function AdminOrders() {
           className="w-full sm:w-auto"
           disabled={isLoading}
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? (
+            <LoadingSpinner size="sm" className="mr-2" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
           Refresh
         </Button>
       </div>
@@ -100,13 +134,22 @@ export default function AdminOrders() {
                 <Input
                   placeholder="Search by order number, member, or store..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Search term changed:', e.target.value);
+                    setSearchTerm(e.target.value);
+                  }}
                   className="pl-10"
                 />
               </div>
             </div>
             <div className="w-full md:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select 
+                value={statusFilter} 
+                onValueChange={(value) => {
+                  console.log('Status filter changed:', value);
+                  setStatusFilter(value);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -125,12 +168,24 @@ export default function AdminOrders() {
       {/* Orders Table */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base md:text-lg">Orders ({filteredOrders.length})</CardTitle>
-          <CardDescription className="text-sm">
-            {filteredOrders.length === 0 && (searchTerm || statusFilter !== 'all')
-              ? 'No orders match your search criteria'
-              : `Showing ${filteredOrders.length} orders`}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base md:text-lg">
+                Orders ({filteredOrders.length})
+              </CardTitle>
+              <CardDescription className="text-sm">
+                {filteredOrders.length === 0 && (searchTerm || statusFilter !== 'all')
+                  ? 'No orders match your search criteria'
+                  : `Showing ${filteredOrders.length} orders`}
+              </CardDescription>
+            </div>
+            {isLoading && filteredOrders.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <LoadingSpinner size="sm" />
+                Updating...
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {/* Mobile Card View */}
@@ -173,7 +228,7 @@ export default function AdminOrders() {
                           <div className="flex gap-2 pt-2">
                             <Button
                               size="sm"
-                              onClick={() => approveOrder(order.id)}
+                              onClick={() => handleApprove(order.id)}
                               className="bg-green-600 hover:bg-green-700 text-white flex-1 text-xs"
                               disabled={isLoading}
                             >
@@ -183,7 +238,7 @@ export default function AdminOrders() {
                             <Button
                               size="sm"
                               variant="destructive"
-                              onClick={() => rejectOrder(order.id)}
+                              onClick={() => handleReject(order.id)}
                               className="flex-1 text-xs"
                               disabled={isLoading}
                             >
@@ -257,7 +312,7 @@ export default function AdminOrders() {
                         <div className="flex gap-1">
                           <Button
                             size="sm"
-                            onClick={() => approveOrder(order.id)}
+                            onClick={() => handleApprove(order.id)}
                             className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1"
                             disabled={isLoading}
                           >
@@ -266,7 +321,7 @@ export default function AdminOrders() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => rejectOrder(order.id)}
+                            onClick={() => handleReject(order.id)}
                             className="text-xs px-2 py-1"
                             disabled={isLoading}
                           >
@@ -295,5 +350,13 @@ export default function AdminOrders() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AdminOrders() {
+  return (
+    <ErrorBoundary>
+      <AdminOrdersContent />
+    </ErrorBoundary>
   );
 }

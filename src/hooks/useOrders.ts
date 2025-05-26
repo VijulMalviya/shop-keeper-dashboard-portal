@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Order } from '@/services/mockData';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock API endpoints
-const API_BASE_URL = 'https://jsonplaceholder.typicode.com'; // Using JSONPlaceholder for demo
+const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
 
 interface UseOrdersReturn {
   orders: Order[];
@@ -18,17 +19,14 @@ interface UseOrdersReturn {
   setStatusFilter: (status: string) => void;
   approveOrder: (orderId: string) => Promise<void>;
   rejectOrder: (orderId: string) => Promise<void>;
-  refreshOrders: () => Promise<void>;
+  refreshOrders: () => void;
 }
 
 export const useOrders = (): UseOrdersReturn => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Mock data generator
   const generateMockOrders = (): Order[] => {
@@ -56,11 +54,16 @@ export const useOrders = (): UseOrdersReturn => {
     }));
   };
 
-  // Simulate API call with axios
-  const fetchOrders = async (): Promise<Order[]> => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Fetch orders with React Query
+  const {
+    data: orders = [],
+    isLoading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['orders'],
+    queryFn: async (): Promise<Order[]> => {
+      console.log('Fetching orders...');
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -69,121 +72,128 @@ export const useOrders = (): UseOrdersReturn => {
       // const response = await axios.get(`${API_BASE_URL}/orders`);
       // return response.data;
       
-      // For demo, return mock data
+      console.log('Orders fetched successfully');
       return generateMockOrders();
-    } catch (err) {
-      const errorMessage = axios.isAxiosError(err) 
-        ? err.response?.data?.message || err.message 
-        : 'Failed to fetch orders';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 
   // Filter orders based on search term and status
-  useEffect(() => {
-    let filtered = orders;
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = !searchTerm || (
+      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.storeName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.storeName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
+    return matchesSearch && matchesStatus;
+  });
 
-    setFilteredOrders(filtered);
-  }, [orders, searchTerm, statusFilter]);
-
-  // Load orders on mount
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  const loadOrders = async () => {
-    const fetchedOrders = await fetchOrders();
-    setOrders(fetchedOrders);
-  };
-
-  const approveOrder = async (orderId: string) => {
-    try {
-      setIsLoading(true);
+  // Approve order mutation
+  const approveOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      console.log(`Approving order ${orderId}...`);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       // await axios.patch(`${API_BASE_URL}/orders/${orderId}`, { status: 'approved' });
       
-      setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, status: 'approved' as const } : order
-      ));
-      
+      console.log(`Order ${orderId} approved successfully`);
+      return orderId;
+    },
+    onSuccess: (orderId) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['orders'], (oldOrders: Order[] = []) =>
+        oldOrders.map(order =>
+          order.id === orderId ? { ...order, status: 'approved' as const } : order
+        )
+      );
+
       toast({
         title: 'Success',
         description: 'Order approved successfully'
       });
-    } catch (err) {
-      const errorMessage = axios.isAxiosError(err) 
-        ? err.response?.data?.message || err.message 
+    },
+    onError: (error) => {
+      console.error('Error approving order:', error);
+      const errorMessage = axios.isAxiosError(error) 
+        ? error.response?.data?.message || error.message 
         : 'Failed to approve order';
+      
       toast({
         title: 'Error',
         description: errorMessage,
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
-  const rejectOrder = async (orderId: string) => {
-    try {
-      setIsLoading(true);
+  // Reject order mutation
+  const rejectOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      console.log(`Rejecting order ${orderId}...`);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       // await axios.patch(`${API_BASE_URL}/orders/${orderId}`, { status: 'rejected' });
       
-      setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, status: 'rejected' as const } : order
-      ));
-      
+      console.log(`Order ${orderId} rejected successfully`);
+      return orderId;
+    },
+    onSuccess: (orderId) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['orders'], (oldOrders: Order[] = []) =>
+        oldOrders.map(order =>
+          order.id === orderId ? { ...order, status: 'rejected' as const } : order
+        )
+      );
+
       toast({
         title: 'Order Rejected',
         description: 'Order has been rejected'
       });
-    } catch (err) {
-      const errorMessage = axios.isAxiosError(err) 
-        ? err.response?.data?.message || err.message 
+    },
+    onError: (error) => {
+      console.error('Error rejecting order:', error);
+      const errorMessage = axios.isAxiosError(error) 
+        ? error.response?.data?.message || error.message 
         : 'Failed to reject order';
+      
       toast({
         title: 'Error',
         description: errorMessage,
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
+  });
+
+  const error = queryError ? 
+    (axios.isAxiosError(queryError) 
+      ? queryError.response?.data?.message || queryError.message 
+      : 'Failed to fetch orders') 
+    : null;
+
+  const approveOrder = async (orderId: string) => {
+    await approveOrderMutation.mutateAsync(orderId);
   };
 
-  const refreshOrders = async () => {
-    await loadOrders();
+  const rejectOrder = async (orderId: string) => {
+    await rejectOrderMutation.mutateAsync(orderId);
+  };
+
+  const refreshOrders = () => {
+    console.log('Refreshing orders...');
+    refetch();
   };
 
   return {
     orders,
     filteredOrders,
-    isLoading,
+    isLoading: isLoading || approveOrderMutation.isPending || rejectOrderMutation.isPending,
     error,
     searchTerm,
     statusFilter,
