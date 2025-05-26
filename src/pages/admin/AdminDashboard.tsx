@@ -1,27 +1,31 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MockDataService, Store, Member, Order } from '@/services/mockData';
-import { TrendingUp, Users, Store as StoreIcon, Clock, ShoppingCart, AlertCircle, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useDashboard } from '@/hooks/useDashboard';
+import { Loading } from '@/components/ui/loading';
+import { TrendingUp, Users, Store as StoreIcon, Clock, ShoppingCart, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AdminDashboard() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { stores, members, orders, isLoading, error } = useDashboard();
 
-  useEffect(() => {
-    const loadData = async () => {
-      const [storesData, membersData, ordersData] = await Promise.all([
-        MockDataService.getStores(),
-        MockDataService.getMembers(),
-        MockDataService.getOrders()
-      ]);
-      setStores(storesData);
-      setMembers(membersData);
-      setOrders(ordersData);
-    };
-    loadData();
-  }, []);
+  if (isLoading) {
+    return <Loading text="Loading dashboard..." className="p-8" />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load dashboard data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const pendingOrders = orders.filter(order => order.status === 'pending');
   const approvedOrders = orders.filter(order => order.status === 'approved');

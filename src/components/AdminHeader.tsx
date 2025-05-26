@@ -1,24 +1,26 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { LogOut } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-export function AdminHeader() {
-  const { user, logout } = useAuth();
+interface AdminHeaderProps {
+  onToggleSidebar: () => void;
+}
+
+export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+  const isMobile = useIsMobile();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-      <div className="flex-1" />
-      
-      <div className="flex items-center space-x-4">
-        <span className="text-sm font-medium text-gray-700">
-          Welcome, {user?.name}
-        </span>
-        <Button variant="outline" size="sm" onClick={logout}>
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
+    <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-4">
+      {!isMobile && (
+        <Button variant="ghost" size="sm" onClick={onToggleSidebar}>
+          <Menu className="h-5 w-5" />
         </Button>
+      )}
+      
+      <div className="flex-1">
+        <h1 className="text-lg font-semibold text-gray-900">Admin Portal</h1>
       </div>
     </header>
   );

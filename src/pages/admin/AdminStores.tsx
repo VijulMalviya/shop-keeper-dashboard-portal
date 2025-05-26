@@ -5,12 +5,26 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { MockDataService, Store } from '@/services/mockData';
-import { Search, Edit, X, Store as StoreIcon, Users, MapPin } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useStores } from '@/hooks/useStores';
+import { Loading, LoadingSpinner } from '@/components/ui/loading';
+import { Store } from '@/services/mockData';
+import { Search, Edit, X, Store as StoreIcon, Users, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function AdminStores() {
-  const [stores, setStores] = useState<Store[]>([]);
+  const {
+    stores,
+    isLoading,
+    error,
+    refetch,
+    addStore,
+    updateStore,
+    deleteStore,
+    isAddingStore,
+    isUpdatingStore,
+    isDeletingStore
+  } = useStores();
+
   const [filteredStores, setFilteredStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -20,11 +34,6 @@ export default function AdminStores() {
     storeId: '',
     memberCount: 0
   });
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadStores();
-  }, []);
 
   useEffect(() => {
     const filtered = stores.filter(store =>
@@ -34,36 +43,26 @@ export default function AdminStores() {
     setFilteredStores(filtered);
   }, [stores, searchTerm]);
 
-  const loadStores = async () => {
-    const data = await MockDataService.getStores();
-    setStores(data);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingStore) {
-        await MockDataService.updateStore(editingStore.id, formData);
-        toast({ title: 'Store updated successfully' });
+        await updateStore(editingStore.id, formData);
       } else {
-        await MockDataService.addStore(formData);
-        toast({ title: 'Store added successfully' });
+        await addStore(formData);
       }
-      loadStores();
       resetForm();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to save store', variant: 'destructive' });
+      console.error('Error saving store:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this store?')) {
       try {
-        await MockDataService.deleteStore(id);
-        toast({ title: 'Store deleted successfully' });
-        loadStores();
+        await deleteStore(id);
       } catch (error) {
-        toast({ title: 'Error', description: 'Failed to delete store', variant: 'destructive' });
+        console.error('Error deleting store:', error);
       }
     }
   };
@@ -84,6 +83,10 @@ export default function AdminStores() {
     setIsAddDialogOpen(true);
   };
 
+  if (isLoading && stores.length === 0) {
+    return <Loading text="Loading stores..." className="p-8" />;
+  }
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
@@ -91,60 +94,87 @@ export default function AdminStores() {
           <h1 className="text-3xl font-bold text-gray-900">Store Locations</h1>
           <p className="text-gray-600 mt-2">Manage your retail network</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} className="bg-black text-white hover:bg-gray-800">
-              Add New Store
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingStore ? 'Edit Store' : 'Add New Store'}</DialogTitle>
-              <DialogDescription>
-                {editingStore ? 'Update store information' : 'Enter store details below'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Store Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="storeId">Store ID</Label>
-                <Input
-                  id="storeId"
-                  value={formData.storeId}
-                  onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="memberCount">Member Count</Label>
-                <Input
-                  id="memberCount"
-                  type="number"
-                  value={formData.memberCount}
-                  onChange={(e) => setFormData({ ...formData, memberCount: parseInt(e.target.value) || 0 })}
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  {editingStore ? 'Update' : 'Add'} Store
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <LoadingSpinner size="sm" className="mr-2" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Refresh
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()} className="bg-black text-white hover:bg-gray-800">
+                Add New Store
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingStore ? 'Edit Store' : 'Add New Store'}</DialogTitle>
+                <DialogDescription>
+                  {editingStore ? 'Update store information' : 'Enter store details below'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Store Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="storeId">Store ID</Label>
+                  <Input
+                    id="storeId"
+                    value={formData.storeId}
+                    onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="memberCount">Member Count</Label>
+                  <Input
+                    id="memberCount"
+                    type="number"
+                    value={formData.memberCount}
+                    onChange={(e) => setFormData({ ...formData, memberCount: parseInt(e.target.value) || 0 })}
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    className="flex-1"
+                    disabled={isAddingStore || isUpdatingStore}
+                  >
+                    {(isAddingStore || isUpdatingStore) && <LoadingSpinner size="sm" className="mr-2" />}
+                    {editingStore ? 'Update' : 'Add'} Store
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="mb-6">
         <div className="relative max-w-md">
@@ -157,6 +187,13 @@ export default function AdminStores() {
           />
         </div>
       </div>
+
+      {isLoading && stores.length > 0 && (
+        <div className="flex items-center justify-center mb-4">
+          <LoadingSpinner size="sm" className="mr-2" />
+          <span className="text-sm text-gray-600">Updating stores...</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStores.map((store, index) => (
@@ -181,6 +218,7 @@ export default function AdminStores() {
                     size="sm"
                     onClick={() => openEditDialog(store)}
                     className="h-8 w-8 p-0"
+                    disabled={isUpdatingStore}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -189,6 +227,7 @@ export default function AdminStores() {
                     size="sm"
                     onClick={() => handleDelete(store.id)}
                     className="h-8 w-8 p-0 text-red-600"
+                    disabled={isDeletingStore}
                   >
                     <X className="w-4 h-4" />
                   </Button>
