@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useOrders } from '@/hooks/useOrders';
+import { usePagination } from '@/hooks/usePagination';
 import { OrdersTableSkeleton } from '@/components/OrdersTableSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Loading, LoadingSpinner } from '@/components/ui/loading';
@@ -27,8 +28,28 @@ function AdminOrdersContent() {
     refreshOrders
   } = useOrders();
 
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedOrders,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    canGoNext,
+    canGoPrevious,
+    startIndex,
+    endIndex,
+    totalItems
+  } = usePagination({
+    data: filteredOrders,
+    itemsPerPage: 10
+  });
+
   console.log('AdminOrders render:', { 
     ordersCount: filteredOrders.length, 
+    paginatedCount: paginatedOrders.length,
+    currentPage,
+    totalPages,
     isLoading, 
     error,
     searchTerm,
@@ -171,12 +192,12 @@ function AdminOrdersContent() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base md:text-lg">
-                Orders ({filteredOrders.length})
+                Orders ({totalItems})
               </CardTitle>
               <CardDescription className="text-sm">
-                {filteredOrders.length === 0 && (searchTerm || statusFilter !== 'all')
+                {totalItems === 0 && (searchTerm || statusFilter !== 'all')
                   ? 'No orders match your search criteria'
-                  : `Showing ${filteredOrders.length} orders`}
+                  : `Showing ${startIndex + 1}-${endIndex} of ${totalItems} orders`}
               </CardDescription>
             </div>
             {isLoading && filteredOrders.length > 0 && (
@@ -190,7 +211,7 @@ function AdminOrdersContent() {
         <CardContent className="p-0">
           {/* Mobile Card View */}
           <div className="block md:hidden">
-            {filteredOrders.length === 0 ? (
+            {paginatedOrders.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <p className="text-gray-500 text-sm">
                   {searchTerm || statusFilter !== 'all' 
@@ -200,7 +221,7 @@ function AdminOrdersContent() {
               </div>
             ) : (
               <div className="space-y-4 p-4">
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <Card key={order.id} className="border border-gray-200">
                     <CardContent className="p-4">
                       <div className="space-y-3">
@@ -271,7 +292,7 @@ function AdminOrdersContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <TableRow key={order.id} className="hover:bg-gray-50">
                     <TableCell className="font-medium text-sm">
                       #{order.id.slice(-6)}
@@ -337,7 +358,7 @@ function AdminOrdersContent() {
               </TableBody>
             </Table>
 
-            {filteredOrders.length === 0 && (
+            {paginatedOrders.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-sm">
                   {searchTerm || statusFilter !== 'all' 
@@ -348,6 +369,48 @@ function AdminOrdersContent() {
             )}
           </div>
         </CardContent>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={goToPreviousPage}
+                    className={!canGoPrevious ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                
+                {/* Page numbers */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
+                  if (pageNumber <= totalPages) {
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => goToPage(pageNumber)}
+                          isActive={currentPage === pageNumber}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+                  return null;
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={goToNextPage}
+                    className={!canGoNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </Card>
     </div>
   );
